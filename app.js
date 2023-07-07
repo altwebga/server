@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 
 app.post("/message", async (req, res) => {
   recaptcha.verify(req, async (error, data) => {
-    if (error || data.score < 0.5) {
+    if (error || !data.success || data.score < 0.5) {
       return res.status(400).json({ message: "reCAPTCHA не пройдена" });
     }
 
