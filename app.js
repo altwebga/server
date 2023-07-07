@@ -3,10 +3,22 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const rateLimit = require('express-rate-limit');
+const { RecaptchaV2 } = require('express-recaptcha');
 
 const app = express();
 
+// Создание экземпляра reCAPTCHA
+const recaptcha = new RecaptchaV2(process.env.RECAPTCHA_SITE_KEY, process.env.RECAPTCHA_SECRET_KEY);
+
+// Ограничение частоты запросов
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 100 // ограничение каждого IP до 100 запросов за окно
+});
+
 // Middleware
+app.use(limiter);
 app.use(
   cors({
     origin: 'https://webga.ru',
@@ -16,7 +28,11 @@ app.use(
 );
 app.use(bodyParser.json());
 
-app.post('/message', async (req, res) => {
+app.post('/message', recaptcha.middleware.verify, async (req, res) => {
+  if (req.recaptcha.error) {
+    return res.status(400).json({ message: 'reCAPTCHA не пройдена' });
+  }
+  
   const { email, message } = req.body;
 
   let transporter = nodemailer.createTransport({
