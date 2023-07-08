@@ -2,10 +2,16 @@ const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
+const cors = require('cors');
 
 const app = express();
 
 app.use(bodyParser.json());
+
+app.use(cors({
+  origin: 'https://webga.ru',
+  optionsSuccessStatus: 200
+}));
 
 app.post('/message', async (req, res) => {
   const { email, message, recaptchaScore } = req.body;
