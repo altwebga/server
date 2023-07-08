@@ -10,7 +10,11 @@ app.use(bodyParser.json());
 
 app.use(cors({
   origin: 'https://webga.ru',
-  optionsSuccessStatus: 200
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+  preflightContinue: true
 }));
 
 app.post('/message', async (req, res) => {
