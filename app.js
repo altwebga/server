@@ -1,8 +1,8 @@
 const express = require('express');
+const cors = require('cors');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
-const cors = require('cors');
 
 const app = express();
 
