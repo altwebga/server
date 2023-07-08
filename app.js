@@ -1,5 +1,6 @@
+require("dotenv").config();
 const express = require('express');
-const cors = require('cors');
+const cors = require("cors");
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
@@ -8,16 +9,13 @@ const app = express();
 
 app.use(bodyParser.json());
 
-const corsOptions = {
-  origin: 'https://webga.ru',
-  methods: 'POST',
-  credentials: true,
-  maxAge: 3600,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));  // pre-flight request. Needed for CORS with cookies
+app.use(
+  cors({
+    origin: "https://webga.ru",
+    methods: ["POST"],
+    credentials: true,
+  })
+);
 
 app.post('/message', async (req, res) => {
   const { email, message, recaptchaScore } = req.body;
