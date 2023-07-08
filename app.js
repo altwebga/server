@@ -30,6 +30,7 @@ app.use(
   })
 );
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }))
 
 app.post("/message", async (req, res) => {
   recaptcha.verify(req, async (error, data) => {
