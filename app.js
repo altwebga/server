@@ -1,76 +1,61 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const nodemailer = require("nodemailer");
-const rateLimit = require("express-rate-limit");
-const { RecaptchaV3 } = require("express-recaptcha");
+const express = require('express');
+const axios = require('axios');
+const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
-// Создание экземпляра reCAPTCHA
-const recaptcha = new RecaptchaV3(
-  process.env.RECAPTCHA_SITE_KEY,
-  process.env.RECAPTCHA_SECRET_KEY
-);
-
-// Ограничение частоты запросов
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 100, // ограничение каждого IP до 100 запросов за окно
-});
-
-// Middleware
-app.use(limiter);
-app.use(
-  cors({
-    origin: "https://webga.ru",
-    methods: ["POST"],
-    credentials: true,
-  })
-);
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }))
 
-app.post("/message", async (req, res) => {
-  recaptcha.verify(req, async (error, data) => {
-    if (error || !data.success || data.score < 0.5) {
-      return res.status(400).json({ message: "reCAPTCHA не пройдена" });
-    }
+app.post('/message', async (req, res) => {
+  const { email, message, recaptchaScore } = req.body;
 
-    const { email, message } = req.body;
-
-    let transporter = nodemailer.createTransport({
-      host: process.env.SMTP_SERVER,
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD,
+  // Проверка reCAPTCHA
+  try {
+    const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
+      params: {
+        secret: process.env.RECAPTCHA_SECRET_KEY,
+        response: recaptchaScore,
       },
     });
 
-    let mailOptions = {
-      from: process.env.EMAIL,
-      to: process.env.EMAIL_TO,
-      subject: `Новое сообщение от ${email}`,
-      text: message,
-    };
+    const { data } = response;
 
-    try {
-      await transporter.sendMail(mailOptions);
-      res.status(200).json({ message: "Сообщение успешно отправлено" });
-    } catch (error) {
-      console.error(error);
-      res
-        .status(500)
-        .json({
-          error: "Ошибка при отправке сообщения",
-          details: error.message,
-        });
+    if (data.success && data.score > 0.5) {
+      // Создаем транспорт для отправки почты
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_SERVER, // замените на хост вашего SMTP-сервера
+        port: 465,
+        secure: true, // true для порта 465, false для других портов
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.PASSWORD,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: process.env.EMAIL_TO, // вставьте сюда адрес электронной почты, на который хотите получать сообщения
+        subject: `Новое сообщение от ${email}`,
+        text: message,
+      };
+
+      // Отправляем письмо
+      transporter.sendMail(mailOptions, function(err, info){
+        if (err) {
+          console.log(err);
+          res.status(500).json({ error: 'Failed to send the email' });
+        } else {
+          res.status(200).json({ status: 'Email sent' });
+        }
+      });
+    } else {
+      res.status(400).json({ error: 'Failed reCAPTCHA verification' });
     }
-  });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-const port = 4000;
-app.listen(port, () => console.log(`Сервер работает на порту ${port}`));
+const port = process.env.PORT || 4000;
+app.listen(port, () => console.log(`Server is listening on port ${port}`));
