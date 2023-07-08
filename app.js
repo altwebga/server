@@ -8,14 +8,16 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.use(cors({
+const corsOptions = {
   origin: 'https://webga.ru',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: 'POST',
   credentials: true,
-  optionsSuccessStatus: 200,
-  preflightContinue: true
-}));
+  maxAge: 3600,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));  // pre-flight request. Needed for CORS with cookies
 
 app.post('/message', async (req, res) => {
   const { email, message, recaptchaScore } = req.body;
