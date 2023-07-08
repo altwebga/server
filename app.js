@@ -1,37 +1,41 @@
 require("dotenv").config();
-const express = require('express');
+const express = require("express");
 const cors = require("cors");
-const axios = require('axios');
-const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
+const axios = require("axios");
+const bodyParser = require("body-parser");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
 app.use(bodyParser.json());
 
 const corsOptions = {
-  origin: 'https://webga.ru',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: "https://webga.ru",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
 
-app.options('*', cors(corsOptions)); // preflight CORS
+app.options("*", cors(corsOptions)); // preflight CORS
 
-app.post('/message', async (req, res) => {
+app.post("/message", async (req, res) => {
   const { email, message, recaptchaScore } = req.body;
 
   // Проверка reCAPTCHA
   try {
-    const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
-      params: {
-        secret: process.env.RECAPTCHA_SECRET_KEY,
-        response: recaptchaScore,
-      },
-    });
+    const response = await axios.post(
+      "https://www.google.com/recaptcha/api/siteverify",
+      null,
+      {
+        params: {
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: recaptchaScore,
+        },
+      }
+    );
 
     const { data } = response;
 
@@ -55,19 +59,19 @@ app.post('/message', async (req, res) => {
       };
 
       // Отправляем письмо
-      transporter.sendMail(mailOptions, function(err, info){
+      transporter.sendMail(mailOptions, function (err, info) {
         if (err) {
           console.log(err);
-          res.status(500).json({ error: 'Failed to send the email' });
+          res.status(500).json({ error: "Failed to send the email" });
         } else {
-          res.status(200).json({ status: 'Email sent' });
+          res.status(200).json({ status: "Email sent" });
         }
       });
     } else {
-      res.status(400).json({ error: 'Failed reCAPTCHA verification' });
+      res.status(400).json({ error: "Failed reCAPTCHA verification" });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
