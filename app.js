@@ -9,13 +9,17 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.use(
-  cors({
-    origin: "https://webga.ru",
-    methods: ["POST"],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: 'https://webga.ru',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+app.options('*', cors(corsOptions)); // preflight CORS
 
 app.post('/message', async (req, res) => {
   const { email, message, recaptchaScore } = req.body;
